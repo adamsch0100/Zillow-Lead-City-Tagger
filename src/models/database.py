@@ -1,4 +1,4 @@
-from supabase import create_client
+from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
 from flask_login import UserMixin
@@ -6,10 +6,22 @@ from flask_login import UserMixin
 load_dotenv()
 
 # Initialize Supabase client
-supabase = create_client(
-    os.getenv('SUPABASE_URL'),
-    os.getenv('SUPABASE_KEY')
-)
+try:
+    supabase = create_client(
+        os.getenv('SUPABASE_URL'),
+        os.getenv('SUPABASE_KEY'),
+        options={
+            'headers': {
+                'Authorization': f'Bearer {os.getenv("SUPABASE_KEY")}'
+            }
+        }
+    )
+except TypeError:
+    # Fallback for older versions
+    supabase = create_client(
+        os.getenv('SUPABASE_URL'),
+        os.getenv('SUPABASE_KEY')
+    )
 
 class User(UserMixin):
     def __init__(self, user_data):
