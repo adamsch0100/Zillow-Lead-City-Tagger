@@ -1,4 +1,4 @@
-from supabase import create_client, Client
+from supabase import create_client
 import os
 from dotenv import load_dotenv
 from flask_login import UserMixin
@@ -6,22 +6,13 @@ from flask_login import UserMixin
 load_dotenv()
 
 # Initialize Supabase client
-try:
-    supabase = create_client(
-        os.getenv('SUPABASE_URL'),
-        os.getenv('SUPABASE_KEY'),
-        options={
-            'headers': {
-                'Authorization': f'Bearer {os.getenv("SUPABASE_KEY")}'
-            }
-        }
-    )
-except TypeError:
-    # Fallback for older versions
-    supabase = create_client(
-        os.getenv('SUPABASE_URL'),
-        os.getenv('SUPABASE_KEY')
-    )
+supabase_url = os.getenv('SUPABASE_URL')
+supabase_key = os.getenv('SUPABASE_KEY')
+
+if not supabase_url or not supabase_key:
+    raise ValueError("Missing required Supabase environment variables")
+
+supabase = create_client(supabase_url, supabase_key)
 
 class User(UserMixin):
     def __init__(self, user_data):
