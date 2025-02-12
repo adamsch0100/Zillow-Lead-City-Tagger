@@ -13,7 +13,9 @@ import base64
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, 
+           template_folder='templates',
+           static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
