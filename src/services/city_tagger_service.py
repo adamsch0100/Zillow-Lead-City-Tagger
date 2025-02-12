@@ -1,5 +1,5 @@
-from database import Database
-from zillow_lead_tagger import process_lead, process_all_leads
+from src.models.database import Database
+from src.services.zillow_lead_tagger import process_lead, process_all_leads
 import time
 from datetime import datetime, timedelta
 import threading
