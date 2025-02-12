@@ -5,8 +5,8 @@ import os
 import stripe
 from flask_mail import Mail, Message
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
-from database import Database, User
-from city_tagger_service import city_tagger_service
+from models.database import Database, User
+from services.city_tagger_service import city_tagger_service
 from dotenv import load_dotenv
 import bcrypt
 import base64
