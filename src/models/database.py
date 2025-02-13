@@ -26,19 +26,25 @@ class Database:
     @staticmethod
     def create_user(email, password_hash):
         if not email or not password_hash:
+            print(f"Invalid input: email={email}, password_hash={password_hash}")
             return None
             
         try:
+            print(f"Attempting to create user with email: {email}")
             result = supabase.table('users').insert({
                 'email': email,
                 'password_hash': password_hash
             }).execute()
             
+            print(f"Database response: {result}")
+            
             if result.data and len(result.data) > 0:
                 return User(result.data[0])
+            print("No data returned from database")
             return None
         except Exception as e:
             print(f"Error creating user: {str(e)}")
+            print(f"Error type: {type(e)}")
             return None
 
     @staticmethod
