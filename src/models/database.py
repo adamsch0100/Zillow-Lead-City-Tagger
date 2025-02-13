@@ -25,13 +25,21 @@ class User(UserMixin):
 class Database:
     @staticmethod
     def create_user(email, password_hash):
-        result = supabase.table('users').insert({
-            'email': email,
-            'password_hash': password_hash
-        }).execute()
-        if result.data:
-            return User(result.data[0])
-        return None
+        if not email or not password_hash:
+            return None
+            
+        try:
+            result = supabase.table('users').insert({
+                'email': email,
+                'password_hash': password_hash
+            }).execute()
+            
+            if result.data and len(result.data) > 0:
+                return User(result.data[0])
+            return None
+        except Exception as e:
+            print(f"Error creating user: {str(e)}")
+            return None
 
     @staticmethod
     def get_user_by_email(email):

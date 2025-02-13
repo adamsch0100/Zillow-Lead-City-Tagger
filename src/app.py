@@ -295,28 +295,53 @@ def stripe_webhook():
         app.logger.info(f"Processing Stripe event: {event['type']}")
         
         if event['type'] == 'checkout.session.completed':
-            session_obj = event['data']['object']
+            # Get the session object from the event
+            session_obj = event.get('data', {}).get('object', {})
+            if not session_obj:
+                app.logger.error("No session object found in event")
+                return jsonify({'error': 'No session object found'}), 400
+            
+            app.logger.info(f"Session object: {json.dumps(session_obj, indent=2)}")
+            
+            # Get customer email from customer_details
+            customer_details = session_obj.get('customer_details', {})
+            app.logger.info(f"Customer details: {json.dumps(customer_details, indent=2)}")
+            
+            customer_email = customer_details.get('email')
+            app.logger.info(f"Found email in customer_details: {customer_email}")
+            
+            if not customer_email:
+                app.logger.error("No customer email found in session")
+                return jsonify({'error': 'No customer email found'}), 400
+            
+            app.logger.info(f"Using customer email: {customer_email}")
             
             # Check if user exists
-            user = Database.get_user_by_email(session_obj['customer_email'])
+            user = Database.get_user_by_email(customer_email)
             
             if not user:
                 # Create new user
                 temp_password = os.urandom(8).hex()
                 password_hash = bcrypt.hashpw(temp_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
                 
-                user = Database.create_user(session_obj['customer_email'], password_hash)
+                app.logger.info(f"Creating new user with email: {customer_email}")
+                user = Database.create_user(customer_email, password_hash)
+                app.logger.info(f"Created user: {user.__dict__ if user else None}")
+                
+                if not user:
+                    app.logger.error("Failed to create user")
+                    return jsonify({'error': 'Failed to create user'}), 500
                 
                 # Send welcome email with temporary password
                 msg = Message(
                     'Welcome to Zillow Showing Request City Tagger',
                     sender=os.getenv('MAIL_DEFAULT_SENDER'),
-                    recipients=[session_obj['customer_email']]
+                    recipients=[customer_email]
                 )
                 msg.html = f"""
                 Welcome to E8Scripts City Tagger!<br><br>
                 Your temporary login credentials:<br>
-                Email: {session_obj['customer_email']}<br>
+                Email: {customer_email}<br>
                 Password: {temp_password}<br><br>
                 Please login at {os.getenv('E8SCRIPTS_URL')}/login to change your password and set up your Follow Up Boss API key.
                 """
@@ -326,8 +351,8 @@ def stripe_webhook():
             # Create subscription
             subscription = Database.create_subscription(
                 user_id=user.id,
-                stripe_subscription_id=session_obj['subscription'],
-                stripe_customer_id=session_obj['customer'],
+                stripe_subscription_id=session_obj.get('subscription'),
+                stripe_customer_id=session_obj.get('customer'),
                 status='active'
             )
             
@@ -335,7 +360,7 @@ def stripe_webhook():
             msg = Message(
                 'Subscription Confirmation - City Tagger',
                 sender=os.getenv('MAIL_DEFAULT_SENDER'),
-                recipients=[session_obj['customer_email']]
+                recipients=[customer_email]
             )
             msg.html = f"""
             Thank you for subscribing to City Tagger!<br><br>
@@ -345,7 +370,7 @@ def stripe_webhook():
             if not is_test:  # Don't send emails in test mode
                 mail.send(msg)
             
-            app.logger.info(f"Successfully processed checkout session for {session_obj['customer_email']}")
+            app.logger.info(f"Successfully processed checkout session for {customer_email}")
             
         elif event['type'] == 'customer.subscription.updated':
             subscription_obj = event['data']['object']
