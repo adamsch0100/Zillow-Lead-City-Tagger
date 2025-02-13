@@ -217,8 +217,8 @@ def followupboss_webhook():
 
 @app.route('/subscribe/city-tagger', methods=['GET'])
 def subscribe_city_tagger_page():
-    """Display the subscription page"""
-    return render_template('subscribe.html')
+    """Redirect to e8solutions.io subscription page"""
+    return redirect(os.getenv('E8SOLUTIONS_URL', 'https://e8solutions.io') + '/products/city-tagger')
 
 @app.route('/subscribe/city-tagger', methods=['POST'])
 def subscribe_city_tagger():
