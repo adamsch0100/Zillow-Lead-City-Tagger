@@ -250,7 +250,7 @@ def subscribe_city_tagger():
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=os.getenv('E8SCRIPTS_URL', 'https://scripts.e8solutions.io') + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
+            success_url=os.getenv('E8SCRIPTS_URL', 'https://e8scripts.io') + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=os.getenv('E8SOLUTIONS_URL', 'https://e8solutions.io') + '/products/city-tagger?canceled=true',
             customer_email=data['email'],
             metadata={

@@ -24,7 +24,7 @@ def setup_webhook(api_key):
     endpoint = "https://api.followupboss.com/v1/webhooks"
     
     # Get webhook domain from environment
-    webhook_domain = os.getenv('WEBHOOK_DOMAIN', 'http://localhost:5000')
+    webhook_domain = os.getenv('E8SCRIPTS_URL', 'https://e8scripts.io')
     
     # Configure webhook
     data = {
