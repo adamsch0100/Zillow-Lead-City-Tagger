@@ -14,6 +14,7 @@ def get_headers(api_key):
     return {
         'Authorization': f'Basic {base64_auth}',
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-System': 'city_tagger'  # Required system identifier
     }
 

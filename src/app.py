@@ -10,12 +10,19 @@ from src.services.city_tagger_service import city_tagger_service
 from dotenv import load_dotenv
 import bcrypt
 import base64
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__, 
            template_folder='templates',
            static_folder='static')
+# Enable CORS for e8solutions.io
+CORS(app, resources={
+    r"/subscribe/*": {"origins": ["https://e8solutions.io", "http://localhost:3000"]},
+    r"/billing/*": {"origins": ["*"]}  # Stripe can send webhooks from various IPs
+})
+
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
@@ -208,6 +215,11 @@ def followupboss_webhook():
         app.logger.error(f"Error processing webhook: {str(e)}")
         return jsonify({'error': f'Failed to process leads: {str(e)}'}), 500
 
+@app.route('/subscribe/city-tagger', methods=['GET'])
+def subscribe_city_tagger_page():
+    """Display the subscription page"""
+    return render_template('subscribe.html')
+
 @app.route('/subscribe/city-tagger', methods=['POST'])
 def subscribe_city_tagger():
     """Handle new city tagger subscription"""
@@ -238,8 +250,8 @@ def subscribe_city_tagger():
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=os.getenv('E8SCRIPTS_URL') + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=os.getenv('E8SOLUTIONS_URL') + '/products/city-tagger',
+            success_url=os.getenv('E8SCRIPTS_URL', 'https://scripts.e8solutions.io') + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=os.getenv('E8SOLUTIONS_URL', 'https://e8solutions.io') + '/products/city-tagger?canceled=true',
             customer_email=data['email'],
             metadata={
                 'source': data.get('source', 'e8solutions'),
@@ -247,7 +259,11 @@ def subscribe_city_tagger():
             }
         )
         
-        return jsonify({'sessionId': checkout_session.id})
+        return jsonify({
+            'sessionId': checkout_session.id,
+            'publicKey': os.getenv('STRIPE_PUBLIC_KEY'),
+            'url': checkout_session.url
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -260,19 +276,25 @@ def stripe_webhook():
     
     # Skip signature verification in test mode
     is_test = request.headers.get('X-Test-Mode') == 'true'
+    webhook_secret = os.getenv('STRIPE_TEST_WEBHOOK_SECRET') if is_test else os.getenv('STRIPE_WEBHOOK_SECRET')
+    
     if not is_test:
         try:
             event = stripe.Webhook.construct_event(
-                payload, sig_header, os.getenv('STRIPE_WEBHOOK_SECRET')
+                payload, sig_header, webhook_secret
             )
         except ValueError as e:
+            app.logger.error(f"Invalid payload: {str(e)}")
             return jsonify({'error': 'Invalid payload'}), 400
         except stripe.error.SignatureVerificationError as e:
+            app.logger.error(f"Invalid signature: {str(e)}")
             return jsonify({'error': 'Invalid signature'}), 400
     else:
         event = json.loads(payload)
     
     try:
+        app.logger.info(f"Processing Stripe event: {event['type']}")
+        
         if event['type'] == 'checkout.session.completed':
             session_obj = event['data']['object']
             
@@ -324,12 +346,15 @@ def stripe_webhook():
             if not is_test:  # Don't send emails in test mode
                 mail.send(msg)
             
+            app.logger.info(f"Successfully processed checkout session for {session_obj['customer_email']}")
+            
         elif event['type'] == 'customer.subscription.updated':
             subscription_obj = event['data']['object']
             Database.update_subscription_status(
                 subscription_obj['id'],
                 subscription_obj['status']
             )
+            app.logger.info(f"Updated subscription {subscription_obj['id']} status to {subscription_obj['status']}")
                 
         elif event['type'] == 'customer.subscription.deleted':
             subscription_obj = event['data']['object']
@@ -337,10 +362,12 @@ def stripe_webhook():
                 subscription_obj['id'],
                 'canceled'
             )
+            app.logger.info(f"Canceled subscription {subscription_obj['id']}")
         
         return jsonify({'status': 'success'})
         
     except Exception as e:
+        app.logger.error(f"Error processing webhook: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
