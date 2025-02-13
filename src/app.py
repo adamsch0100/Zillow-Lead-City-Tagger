@@ -225,7 +225,7 @@ def subscribe_city_tagger():
     """Handle new city tagger subscription"""
     data = request.json
     
-    if not data or 'priceId' not in data or 'email' not in data:
+    if not data or 'priceId' not in data:
         return jsonify({'error': 'Missing required fields'}), 400
     
     try:
@@ -252,7 +252,6 @@ def subscribe_city_tagger():
             mode='subscription',
             success_url=os.getenv('E8SCRIPTS_URL', 'https://e8scripts.io') + '/dashboard?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=os.getenv('E8SOLUTIONS_URL', 'https://e8solutions.io') + '/products/city-tagger?canceled=true',
-            customer_email=data['email'],
             metadata={
                 'source': data.get('source', 'e8solutions'),
                 'is_test': is_test
