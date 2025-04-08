@@ -113,9 +113,51 @@ def update_api_key():
     if subscription_data.data:
         subscription = subscription_data.data[0]
         Database.update_followupboss_api_key(subscription['id'], api_key)
-        flash('API key updated successfully', 'success')
+        
+        # Initial setup: Create webhook and process historical leads
+        try:
+            from src.services.zillow_lead_tagger import setup_webhook, process_all_leads
+            
+            # First, set up the webhook
+            webhook_id = setup_webhook(api_key)
+            if webhook_id:
+                flash('Webhook configured successfully', 'success')
+            else:
+                flash('Warning: Failed to set up webhook. Please contact support.', 'warning')
+            
+            # Then process historical leads
+            tagged_count = process_all_leads(api_key)
+            flash(f'Successfully processed {tagged_count} historical leads', 'success')
+            
+        except Exception as e:
+            flash(f'API key updated but encountered an error during setup: {str(e)}', 'warning')
     else:
         flash('No active subscription found', 'error')
+    
+    return redirect(url_for('settings'))
+
+@app.route('/settings/process-leads', methods=['POST'])
+@login_required
+def process_leads():
+    """Manual trigger to process all leads"""
+    subscription_data = Database.get_user_subscription(current_user.id)
+    if not subscription_data.data:
+        flash('No active subscription found', 'error')
+        return redirect(url_for('settings'))
+    
+    subscription = subscription_data.data[0]
+    api_key = subscription.get('followupboss_api_key')
+    
+    if not api_key:
+        flash('Please set your Follow Up Boss API key first', 'error')
+        return redirect(url_for('settings'))
+    
+    try:
+        from src.services.zillow_lead_tagger import process_all_leads
+        tagged_count = process_all_leads(api_key)
+        flash(f'Successfully processed {tagged_count} leads', 'success')
+    except Exception as e:
+        flash(f'Error processing leads: {str(e)}', 'error')
     
     return redirect(url_for('settings'))
 

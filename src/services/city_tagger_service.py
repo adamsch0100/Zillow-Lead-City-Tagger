@@ -1,5 +1,5 @@
 from src.models.database import Database
-from src.services.zillow_lead_tagger import process_lead, process_all_leads
+from src.services.zillow_lead_tagger import process_lead, process_all_leads, setup_webhook
 import time
 from datetime import datetime, timedelta
 import threading
@@ -24,7 +24,7 @@ class CityTaggerService:
             self.thread.join()
 
     def _run_service(self):
-        """Main service loop"""
+        """Main service loop - only monitors webhook health"""
         while self.running:
             try:
                 # Get all active subscriptions
@@ -34,36 +34,14 @@ class CityTaggerService:
                     if not subscription['followupboss_api_key']:
                         continue
 
-                    # Create a new script execution record
-                    execution = Database.create_script_execution(
-                        subscription_id=subscription['id'],
-                        status='running'
-                    ).data[0]
-
-                    try:
-                        # Process all leads for this subscription
-                        tagged_count = process_all_leads(subscription['followupboss_api_key'])
-                        
-                        # Update execution record
-                        Database.update_script_execution(
-                            execution_id=execution['id'],
-                            status='completed',
-                            leads_processed=tagged_count,
-                            cities_tagged=tagged_count
-                        )
-                    except Exception as e:
-                        # Update execution record with error
-                        Database.update_script_execution(
-                            execution_id=execution['id'],
-                            status='failed',
-                            error_message=str(e)
-                        )
+                    # Ensure webhook is set up for each subscription
+                    setup_webhook(subscription['followupboss_api_key'])
 
             except Exception as e:
                 print(f"Error in city tagger service: {str(e)}")
 
-            # Sleep for 1 hour before next run
-            time.sleep(3600)
+            # Check webhook health every 6 hours
+            time.sleep(21600)
 
     def process_new_lead(self, lead_id, api_key):
         """Process a single new lead"""

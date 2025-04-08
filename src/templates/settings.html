@@ -42,6 +42,27 @@
             </div>
         </form>
 
+        <!-- Manual Process Button -->
+        {% if subscription.followupboss_api_key %}
+        <div class="px-4 py-5 sm:p-6 bg-gray-50">
+            <div class="grid grid-cols-6 gap-6">
+                <div class="col-span-6 sm:col-span-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Process Leads
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Manually trigger the city tagging process for all your Zillow leads.
+                    </p>
+                    <form method="POST" action="{{ url_for('process_leads') }}" class="mt-4">
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Process All Leads
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Change Password -->
         <form method="POST" action="{{ url_for('change_password') }}" class="divide-y divide-gray-200">
             <div class="px-4 py-5 sm:p-6">
