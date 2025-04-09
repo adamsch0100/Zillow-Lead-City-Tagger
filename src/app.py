@@ -81,6 +81,11 @@ def dashboard():
         flash('No active subscription found', 'error')
         return redirect(url_for('subscribe_city_tagger'))
     
+    # Check if API key is set
+    if not subscription.get('followupboss_api_key'):
+        flash('Please set your Follow Up Boss API key to use City Tagger', 'warning')
+        return redirect(url_for('settings'))
+    
     # Get execution history
     executions_data = Database.get_subscription_executions(subscription['id'])
     executions = executions_data.data if executions_data.data else []
@@ -129,6 +134,9 @@ def update_api_key():
             tagged_count = process_all_leads(api_key, subscription['id'])
             flash(f'Successfully processed {tagged_count} historical leads', 'success')
             
+            # Redirect to dashboard to show execution results
+            return redirect(url_for('dashboard'))
+            
         except Exception as e:
             flash(f'API key updated but encountered an error during setup: {str(e)}', 'warning')
     else:
@@ -156,6 +164,7 @@ def process_leads():
         from src.services.zillow_lead_tagger import process_all_leads
         tagged_count = process_all_leads(api_key, subscription['id'])
         flash(f'Successfully processed {tagged_count} leads', 'success')
+        return redirect(url_for('dashboard'))
     except Exception as e:
         flash(f'Error processing leads: {str(e)}', 'error')
     
