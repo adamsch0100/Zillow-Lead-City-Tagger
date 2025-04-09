@@ -2,7 +2,7 @@ import requests
 import json
 import time
 from datetime import datetime
-from database import Database
+from src.models.database import Database
 import os
 import base64
 
@@ -40,7 +40,9 @@ def test_signup_flow():
         'data': {
             'object': {
                 'id': session_id,
-                'customer_email': signup_data['email'],
+                'customer_details': {
+                    'email': signup_data['email']
+                },
                 'customer': customer_id,
                 'subscription': subscription_id,
                 'metadata': {
@@ -86,13 +88,13 @@ def test_signup_flow():
         'uri': f'/v1/people/{test_lead_id}',
         'system': 'city_tagger',
         'version': '1.0',
-        'payload': {
+        'data': {
             'id': test_lead_id,
             'source': 'Zillow',
             'sourceData': {
                 'property': {
                     'street': '123 Main Street',
-                    'city': 'Greeley',  # Using a city we know is in our list
+                    'city': 'Greeley',
                     'state': 'CO',
                     'code': '80631'
                 }

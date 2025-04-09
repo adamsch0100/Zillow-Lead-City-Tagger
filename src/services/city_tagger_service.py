@@ -63,7 +63,7 @@ class CityTaggerService:
             try:
                 # Process the lead
                 print(f"Processing lead {lead_id} with API key {api_key}")
-                from zillow_lead_tagger import process_lead
+                from src.services.zillow_lead_tagger import process_lead
                 success = process_lead(lead_id, api_key)
                 
                 # Update execution record

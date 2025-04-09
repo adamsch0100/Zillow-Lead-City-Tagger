@@ -20,6 +20,10 @@ def get_headers(api_key):
 
 def setup_webhook(api_key):
     """Set up webhook in Follow Up Boss"""
+    if not api_key or not isinstance(api_key, str) or len(api_key) < 10:
+        print(f"Invalid API key format: {api_key}")
+        return None
+        
     headers = get_headers(api_key)
     endpoint = "https://api.followupboss.com/v1/webhooks"
     
@@ -40,10 +44,11 @@ def setup_webhook(api_key):
         response = requests.get(endpoint, headers=headers)
         if response.status_code == 200:
             webhooks = response.json()
-            for webhook in webhooks:
-                if webhook.get('name') == "City Tagger Service":
-                    print(f"Webhook already exists with ID: {webhook['id']}")
-                    return webhook['id']
+            if isinstance(webhooks, list):
+                for webhook in webhooks:
+                    if webhook.get('name') == "City Tagger Service":
+                        print(f"Webhook already exists with ID: {webhook['id']}")
+                        return webhook['id']
         
         # Create new webhook if it doesn't exist
         response = requests.post(endpoint, headers=headers, json=data)
