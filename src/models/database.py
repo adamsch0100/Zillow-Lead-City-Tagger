@@ -94,7 +94,7 @@ class Database:
         }).execute()
 
     @staticmethod
-    def update_script_execution(execution_id, status, leads_processed=None, cities_tagged=None, error_message=None):
+    def update_script_execution(execution_id, status, leads_processed=None, cities_tagged=None, error_message=None, tagged_cities=None):
         update_data = {'status': status}
         if leads_processed is not None:
             update_data['leads_processed'] = leads_processed
@@ -102,6 +102,8 @@ class Database:
             update_data['cities_tagged'] = cities_tagged
         if error_message is not None:
             update_data['error_message'] = error_message
+        if tagged_cities is not None:
+            update_data['tagged_cities'] = tagged_cities
         
         return supabase.table('script_executions').update(update_data).eq('id', execution_id).execute()
 

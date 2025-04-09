@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - E8Scripts City Tagger{% endblock %}
+{% block title %}Settings - E8Scripts{% endblock %}
 
 {% block content %}
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -9,7 +9,7 @@
             Account Settings
         </h3>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            Manage your account settings and API keys.
+            Manage your account settings and API integrations.
         </p>
     </div>
 
@@ -17,8 +17,15 @@
         <!-- Follow Up Boss API Key -->
         <form method="POST" action="{{ url_for('update_api_key') }}" class="divide-y divide-gray-200">
             <div class="px-4 py-5 sm:p-6">
-                <div class="grid grid-cols-6 gap-6">
-                    <div class="col-span-6 sm:col-span-4">
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Follow Up Boss Integration</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            This API key is used by all your E8Scripts to interact with your Follow Up Boss account.
+                        </p>
+                    </div>
+                    
+                    <div class="col-span-1 sm:col-span-4">
                         <label for="api_key" class="block text-sm font-medium text-gray-700">
                             Follow Up Boss API Key
                         </label>
@@ -27,7 +34,7 @@
                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                placeholder="Enter your Follow Up Boss API key">
                         <p class="mt-2 text-sm text-gray-500">
-                            Your Follow Up Boss API key is required for the city tagger to work. 
+                            Your Follow Up Boss API key is required for all scripts to work. 
                             <a href="https://help.followupboss.com/hc/en-us/articles/360021629571" target="_blank" class="text-indigo-600 hover:text-indigo-900">
                                 Learn how to get your API key
                             </a>
@@ -37,37 +44,23 @@
             </div>
             <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
                 <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Save
+                    Save API Key
                 </button>
             </div>
         </form>
 
-        <!-- Manual Process Button -->
-        {% if subscription.followupboss_api_key %}
-        <div class="px-4 py-5 sm:p-6 bg-gray-50">
-            <div class="grid grid-cols-6 gap-6">
-                <div class="col-span-6 sm:col-span-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Process Leads
-                    </h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Manually trigger the city tagging process for all your Zillow leads.
-                    </p>
-                    <form method="POST" action="{{ url_for('process_leads') }}" class="mt-4">
-                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Process All Leads
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Change Password -->
         <form method="POST" action="{{ url_for('change_password') }}" class="divide-y divide-gray-200">
             <div class="px-4 py-5 sm:p-6">
-                <div class="grid grid-cols-6 gap-6">
-                    <div class="col-span-6 sm:col-span-4">
+                <div class="grid grid-cols-1 gap-6">
+                    <div>
+                        <h3 class="text-lg font-medium leading-6 text-gray-900">Password Management</h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Update your account password.
+                        </p>
+                    </div>
+
+                    <div class="col-span-1 sm:col-span-4">
                         <label for="current_password" class="block text-sm font-medium text-gray-700">
                             Current Password
                         </label>
@@ -75,7 +68,7 @@
                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
+                    <div class="col-span-1 sm:col-span-4">
                         <label for="new_password" class="block text-sm font-medium text-gray-700">
                             New Password
                         </label>
@@ -83,7 +76,7 @@
                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
+                    <div class="col-span-1 sm:col-span-4">
                         <label for="confirm_password" class="block text-sm font-medium text-gray-700">
                             Confirm New Password
                         </label>

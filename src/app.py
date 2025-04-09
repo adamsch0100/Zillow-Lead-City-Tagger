@@ -81,18 +81,37 @@ def dashboard():
         flash('No active subscription found', 'error')
         return redirect(url_for('subscribe_city_tagger'))
     
+    # Get recent execution history (limited to 5 entries)
+    executions_data = Database.get_subscription_executions(subscription['id'])
+    executions = executions_data.data if executions_data.data else []
+    
+    return render_template('dashboard.html', 
+                          subscription=subscription,
+                          executions=executions)
+
+@app.route('/scripts/city-tagger')
+@login_required
+def city_tagger_dashboard():
+    # Get user's subscription
+    subscription_data = Database.get_user_subscription(current_user.id)
+    subscription = subscription_data.data[0] if subscription_data.data else None
+    
+    if not subscription:
+        flash('No active subscription found', 'error')
+        return redirect(url_for('subscribe_city_tagger'))
+    
     # Check if API key is set
     if not subscription.get('followupboss_api_key'):
         flash('Please set your Follow Up Boss API key to use City Tagger', 'warning')
         return redirect(url_for('settings'))
     
-    # Get execution history
+    # Get execution history specific to this script
     executions_data = Database.get_subscription_executions(subscription['id'])
     executions = executions_data.data if executions_data.data else []
     
-    return render_template('dashboard.html', 
-                         subscription=subscription,
-                         executions=executions)
+    return render_template('city_tagger_dashboard.html', 
+                          subscription=subscription,
+                          executions=executions)
 
 @app.route('/settings', methods=['GET'])
 @login_required
@@ -164,7 +183,7 @@ def process_leads():
         from src.services.zillow_lead_tagger import process_all_leads
         tagged_count = process_all_leads(api_key, subscription['id'])
         flash(f'Successfully processed {tagged_count} leads', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('city_tagger_dashboard'))
     except Exception as e:
         flash(f'Error processing leads: {str(e)}', 'error')
     

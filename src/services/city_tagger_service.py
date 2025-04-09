@@ -63,29 +63,38 @@ class CityTaggerService:
             try:
                 # Process the lead
                 print(f"Processing lead {lead_id} with API key {api_key}")
-                from src.services.zillow_lead_tagger import process_lead
-                success = process_lead(lead_id, api_key)
+                from src.services.zillow_lead_tagger import get_property_from_lead, extract_city_from_address, update_lead_tags
                 
-                # Update execution record
-                if success:
-                    Database.update_script_execution(
-                        execution_id=execution['id'],
-                        status='completed',
-                        leads_processed=1,
-                        cities_tagged=1
-                    )
-                    print(f"Successfully processed lead {lead_id}")
-                    return True
-                else:
-                    Database.update_script_execution(
-                        execution_id=execution['id'],
-                        status='failed',
-                        leads_processed=1,
-                        cities_tagged=0,
-                        error_message='Failed to process lead - no city found'
-                    )
-                    print(f"Failed to process lead {lead_id} - no city found")
-                    return False
+                # Get property information
+                address_data = get_property_from_lead(lead_id, api_key)
+                
+                if address_data:
+                    city = extract_city_from_address(address_data)
+                    if city:
+                        success = update_lead_tags(lead_id, city, api_key)
+                        
+                        # Update execution record
+                        if success:
+                            Database.update_script_execution(
+                                execution_id=execution['id'],
+                                status='completed',
+                                leads_processed=1,
+                                cities_tagged=1,
+                                tagged_cities=f"{city} (1)"
+                            )
+                            print(f"Successfully processed lead {lead_id} with city {city}")
+                            return True
+                
+                # If we get here, no city was found/tagged
+                Database.update_script_execution(
+                    execution_id=execution['id'],
+                    status='failed',
+                    leads_processed=1,
+                    cities_tagged=0,
+                    error_message='Failed to process lead - no city found'
+                )
+                print(f"Failed to process lead {lead_id} - no city found")
+                return False
                     
             except Exception as e:
                 print(f"Error processing lead {lead_id}: {str(e)}")

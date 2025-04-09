@@ -376,12 +376,28 @@ def process_all_leads(api_key, subscription_id=None):
         print(f"\nProcessing {len(leads)} Zillow leads")
         
         tagged_count = 0
+        tagged_cities = {}  # Dictionary to track cities and counts
+        
         for lead in leads:
             lead_id = lead.get('id')
-            if process_lead(lead_id, api_key):
-                tagged_count += 1
+            # Get property information
+            address_data = get_property_from_lead(lead_id, api_key)
+            if address_data:
+                city = extract_city_from_address(address_data)
+                if city:
+                    if update_lead_tags(lead_id, city, api_key):
+                        tagged_count += 1
+                        # Track cities
+                        if city in tagged_cities:
+                            tagged_cities[city] += 1
+                        else:
+                            tagged_cities[city] = 1
         
         print(f"\nSuccessfully tagged {tagged_count} leads with city information")
+        print(f"Cities tagged: {tagged_cities}")
+        
+        # Format cities for database
+        city_summary = ", ".join([f"{city} ({count})" for city, count in tagged_cities.items()])
         
         # Update execution record
         if execution_id:
@@ -389,7 +405,8 @@ def process_all_leads(api_key, subscription_id=None):
                 execution_id=execution_id,
                 status='completed',
                 leads_processed=len(leads),
-                cities_tagged=tagged_count
+                cities_tagged=tagged_count,
+                tagged_cities=city_summary if tagged_cities else None
             )
             
         return tagged_count
