@@ -341,27 +341,70 @@ def process_lead(lead_id, api_key):
     
     return False
 
-def process_all_leads(api_key):
+def process_all_leads(api_key, subscription_id=None):
     """Process all Zillow leads for a subscriber"""
     print("Starting Zillow lead tagging process...")
     
-    # First, ensure webhook is set up
-    webhook_id = setup_webhook(api_key)
-    if not webhook_id:
-        print("Warning: Failed to set up webhook")
+    execution_id = None
     
-    # Get all Zillow leads
-    leads = get_zillow_leads(api_key)
-    print(f"\nProcessing {len(leads)} Zillow leads")
+    # If subscription_id is provided, create execution record
+    if subscription_id:
+        from src.models.database import Database
+        execution_result = Database.create_script_execution(
+            subscription_id=subscription_id,
+            status='running'
+        )
+        if execution_result.data:
+            execution_id = execution_result.data[0]['id']
+            print(f"Created execution record with ID: {execution_id}")
     
-    tagged_count = 0
-    for lead in leads:
-        lead_id = lead.get('id')
-        if process_lead(lead_id, api_key):
-            tagged_count += 1
-    
-    print(f"\nSuccessfully tagged {tagged_count} leads with city information")
-    return tagged_count
+    try:
+        # First, ensure webhook is set up
+        webhook_id = setup_webhook(api_key)
+        if not webhook_id:
+            print("Warning: Failed to set up webhook")
+            if execution_id:
+                Database.update_script_execution(
+                    execution_id=execution_id,
+                    status='failed',
+                    error_message='Failed to set up webhook'
+                )
+                return 0
+        
+        # Get all Zillow leads
+        leads = get_zillow_leads(api_key)
+        print(f"\nProcessing {len(leads)} Zillow leads")
+        
+        tagged_count = 0
+        for lead in leads:
+            lead_id = lead.get('id')
+            if process_lead(lead_id, api_key):
+                tagged_count += 1
+        
+        print(f"\nSuccessfully tagged {tagged_count} leads with city information")
+        
+        # Update execution record
+        if execution_id:
+            Database.update_script_execution(
+                execution_id=execution_id,
+                status='completed',
+                leads_processed=len(leads),
+                cities_tagged=tagged_count
+            )
+            
+        return tagged_count
+    except Exception as e:
+        print(f"Error processing leads: {str(e)}")
+        
+        # Update execution record with error
+        if execution_id:
+            Database.update_script_execution(
+                execution_id=execution_id,
+                status='failed',
+                error_message=str(e)
+            )
+            
+        raise
 
 if __name__ == "__main__":
     # For testing purposes

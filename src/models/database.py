@@ -121,4 +121,8 @@ class Database:
 
     @staticmethod
     def get_subscription_by_api_key(api_key):
-        return supabase.table('subscriptions').select('*').eq('followupboss_api_key', api_key).execute() 
+        return supabase.table('subscriptions').select('*').eq('followupboss_api_key', api_key).execute()
+
+    @staticmethod
+    def delete_script_execution(execution_id):
+        return supabase.table('script_executions').delete().eq('id', execution_id).execute() 

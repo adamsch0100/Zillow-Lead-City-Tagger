@@ -126,7 +126,7 @@ def update_api_key():
                 flash('Warning: Failed to set up webhook. Please contact support.', 'warning')
             
             # Then process historical leads
-            tagged_count = process_all_leads(api_key)
+            tagged_count = process_all_leads(api_key, subscription['id'])
             flash(f'Successfully processed {tagged_count} historical leads', 'success')
             
         except Exception as e:
@@ -154,7 +154,7 @@ def process_leads():
     
     try:
         from src.services.zillow_lead_tagger import process_all_leads
-        tagged_count = process_all_leads(api_key)
+        tagged_count = process_all_leads(api_key, subscription['id'])
         flash(f'Successfully processed {tagged_count} leads', 'success')
     except Exception as e:
         flash(f'Error processing leads: {str(e)}', 'error')
