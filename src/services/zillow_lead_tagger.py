@@ -7,6 +7,10 @@ import os
 
 def get_headers(api_key):
     """Create headers for Follow Up Boss API"""
+    if not api_key or not isinstance(api_key, str) or len(api_key) < 10:
+        print(f"Invalid API key format in get_headers: {api_key}")
+        return None
+        
     auth_string = f"{api_key}:"  # Note the colon at the end
     auth_bytes = auth_string.encode('ascii')
     base64_auth = base64.b64encode(auth_bytes).decode('ascii')
@@ -24,20 +28,29 @@ def setup_webhook(api_key):
         print(f"Invalid API key format: {api_key}")
         return None
         
-    headers = get_headers(api_key)
-    endpoint = "https://api.followupboss.com/v1/webhooks"
-    
     # Get webhook domain from environment
     webhook_domain = os.getenv('E8SCRIPTS_URL', 'https://e8scripts.io')
     
-    # Configure webhook
-    data = {
-        "url": f"{webhook_domain}/webhook/followupboss",
-        "events": ["peopleCreated"],
-        "isActive": True,
-        "name": "City Tagger Service",
-        "system": "city_tagger"  # Match the X-System header
+    # Create auth string for Basic Auth
+    auth_string = f"{api_key}:"  # Note the colon at the end
+    auth_bytes = auth_string.encode('ascii')
+    base64_auth = base64.b64encode(auth_bytes).decode('ascii')
+    
+    # Configure headers per FUB docs
+    headers = {
+        'Authorization': f'Basic {base64_auth}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-System': 'city_tagger'  # Required system identifier
     }
+    
+    # Configure webhook - simplified to match docs
+    webhook_data = {
+        "event": "peopleCreated",  # Single event (not an array)
+        "url": f"{webhook_domain}/webhook/followupboss"
+    }
+    
+    endpoint = "https://api.followupboss.com/v1/webhooks"
     
     # First, check if webhook already exists
     try:
@@ -46,16 +59,29 @@ def setup_webhook(api_key):
             webhooks = response.json()
             if isinstance(webhooks, list):
                 for webhook in webhooks:
-                    if webhook.get('name') == "City Tagger Service":
+                    # Check if a webhook with our URL already exists
+                    if webhook.get('url') == webhook_data['url']:
                         print(f"Webhook already exists with ID: {webhook['id']}")
                         return webhook['id']
         
         # Create new webhook if it doesn't exist
-        response = requests.post(endpoint, headers=headers, json=data)
-        if response.status_code == 200:
+        response = requests.post(endpoint, headers=headers, json=webhook_data)
+        
+        # Check for various success scenarios
+        if response.status_code == 200 or response.status_code == 201:
             webhook_id = response.json().get('id')
             print(f"Created new webhook with ID: {webhook_id}")
             return webhook_id
+        elif response.status_code == 400:
+            # Check if webhook already exists error
+            error_text = response.text
+            if "already exists" in error_text.lower():
+                # Extract ID from error message if possible
+                id_match = re.search(r'ID: (\d+)', error_text)
+                if id_match:
+                    webhook_id = id_match.group(1)
+                    print(f"Webhook already exists with ID: {webhook_id}")
+                    return webhook_id
         
         print(f"Failed to create webhook: {response.status_code}")
         print(f"Response: {response.text}")
@@ -69,6 +95,10 @@ def get_zillow_leads(api_key):
     """Get all leads from Follow Up Boss with source 'Zillow'"""
     endpoint = "https://api.followupboss.com/v1/people"
     headers = get_headers(api_key)
+    if not headers:
+        print("Failed to create headers - invalid API key")
+        return []
+    
     all_leads = []
     offset = 0
     limit = 100  # Max limit per request
@@ -131,6 +161,10 @@ def update_lead_tags(lead_id, city, api_key):
     """Update lead tags in Follow Up Boss"""
     print(f"\nUpdating tags for lead {lead_id} with city {city}")
     headers = get_headers(api_key)
+    if not headers:
+        print("Failed to create headers - invalid API key")
+        return False
+    
     endpoint = f"https://api.followupboss.com/v1/people/{lead_id}"
     
     # Get current tags
@@ -170,6 +204,9 @@ def get_property_from_lead(lead_id, api_key):
     """Get property information from events and lead data"""
     print(f"\nGetting events for lead {lead_id}")
     headers = get_headers(api_key)
+    if not headers:
+        print("Failed to create headers - invalid API key")
+        return None
     
     # Define patterns for property inquiry formats
     property_patterns = [
