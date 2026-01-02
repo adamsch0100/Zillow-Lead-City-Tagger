@@ -1,126 +1,148 @@
-# City Tagger Service
+# Zillow Lead City Tagger
 
-Automatically tag Zillow showing requests with city information in Follow Up Boss.
+Automatically enrich Zillow showing requests with city information and sync to Follow Up Boss CRM - saving real estate agents hours of manual data entry.
+
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-2.x-000000?logo=flask&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white)
+![Railway](https://img.shields.io/badge/Railway-Deployed-0B0D0E?logo=railway&logoColor=white)
+
+## The Problem
+
+Real estate agents receive hundreds of Zillow showing requests, but the leads often lack critical city/location information. Manually looking up and tagging each lead takes hours every week.
+
+## The Solution
+
+City Tagger automatically:
+1. Monitors incoming Zillow leads
+2. Extracts property addresses
+3. Geocodes to determine city/area
+4. Tags leads in Follow Up Boss with the correct city
+5. Runs 24/7 as a background service
+
+## Features
+
+- **Automatic Processing** - Set it and forget it lead enrichment
+- **Follow Up Boss Integration** - Direct CRM sync via API
+- **Real-time Dashboard** - Monitor processing status
+- **Stripe Subscriptions** - SaaS billing built-in
+- **Email Notifications** - Processing alerts and summaries
+- **Multi-user Support** - Each agent gets their own instance
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| **Backend** | Python, Flask |
+| **Database** | PostgreSQL (Supabase) |
+| **Payments** | Stripe Subscriptions |
+| **Email** | Transactional email service |
+| **Deployment** | Railway |
+| **Migrations** | Alembic |
+
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Zillow Leads   │────▶│  City Tagger     │────▶│  Follow Up Boss │
+│  (via email)    │     │  Service         │     │  CRM            │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                               │
+                               ▼
+                        ┌──────────────────┐
+                        │  Dashboard       │
+                        │  (Flask App)     │
+                        └──────────────────┘
+```
 
 ## Project Structure
 
 ```
 city_tagger/
 ├── src/
-│   ├── models/
-│   │   ├── models.py         # SQLAlchemy models
-│   │   └── database.py      # Database connection and operations
-│   ├── services/
-│   │   ├── zillow_lead_tagger.py    # Lead processing logic
-│   │   └── city_tagger_service.py   # Background service
-│   ├── utils/
-│   │   ├── setup_stripe_products.py  # Stripe product setup
-│   │   ├── list_stripe_products.py   # List Stripe products
-│   │   ├── monitor_service.py        # Service monitoring
-│   │   └── check_user.py            # User verification
-│   ├── tests/
-│   │   ├── test_mail.py             # Email testing
-│   │   ├── test_signup_flow.py      # Signup flow testing
-│   │   └── create_test_*.py         # Test data creation
-│   └── app.py                       # Main Flask application
-├── config/
-│   ├── schema.sql                   # Database schema
-│   ├── alembic.ini                  # Alembic configuration
-│   └── .env.example                 # Environment variables example
-├── templates/                       # HTML templates
-│   ├── base.html
-│   ├── dashboard.html
-│   ├── login.html
-│   └── settings.html
-├── alembic/                        # Database migrations
-├── requirements.txt                # Python dependencies
-├── project_management.md           # Project tracking
-└── README.md                      # This file
-
-## Setup
-
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/city_tagger.git
-cd city_tagger
+│   ├── models/           # SQLAlchemy database models
+│   ├── services/         # Lead processing logic
+│   ├── utils/            # Helper scripts
+│   ├── tests/            # Test suite
+│   └── app.py            # Flask application
+├── templates/            # HTML templates
+│   ├── dashboard.html    # Main dashboard
+│   ├── settings.html     # User settings
+│   └── login.html        # Authentication
+├── alembic/              # Database migrations
+├── config/               # Configuration files
+└── requirements.txt      # Python dependencies
 ```
 
-2. Create and activate virtual environment
+## Getting Started
+
+### Prerequisites
+- Python 3.10+
+- PostgreSQL database
+- Follow Up Boss API access
+- Stripe account (for subscriptions)
+
+### Installation
+
 ```bash
+# Clone and setup
+git clone https://github.com/adamsch0100/Zillow-Lead-City-Tagger.git
+cd Zillow-Lead-City-Tagger
+
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-3. Install dependencies
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-4. Set up environment variables
-```bash
+# Configure environment
 cp config/.env.example .env
-# Edit .env with your configuration
-```
+# Edit .env with your API keys
 
-5. Initialize the database
-```bash
-# Using Supabase, follow migration instructions in schema.sql
-```
+# Run database migrations
+alembic upgrade head
 
-## Development
-
-1. Run the Flask application
-```bash
+# Start the application
 python src/app.py
 ```
 
-2. Run tests
-```bash
-cd src/tests
-python -m pytest
-```
+## Deployment
 
-## Deployment to Railway
+Deployed on Railway with automatic scaling:
 
-1. Install Railway CLI
-2. Login to Railway
 ```bash
 railway login
-```
-
-3. Initialize Railway project
-```bash
 railway init
-```
-
-4. Add environment variables
-```bash
-railway vars set FLASK_ENV=production
-# Add other required environment variables
-```
-
-5. Deploy
-```bash
 railway up
 ```
 
-## Features
+## API Endpoints
 
-- Automatic city tagging for Zillow leads
-- Follow Up Boss integration
-- Stripe subscription management
-- Email notifications
-- Dashboard for monitoring
-- Real-time lead processing
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/dashboard` | GET | Main dashboard view |
+| `/settings` | GET/POST | User settings |
+| `/api/process` | POST | Trigger lead processing |
+| `/api/status` | GET | Service status |
+| `/webhook/stripe` | POST | Stripe webhooks |
 
-## Contributing
+## Environment Variables
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+```env
+FLASK_ENV=production
+DATABASE_URL=postgresql://...
+FUB_API_KEY=your_follow_up_boss_key
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+EMAIL_API_KEY=your_email_service_key
+```
 
 ## License
 
-This project is proprietary and confidential. 
+Proprietary - All rights reserved.
+
+---
+
+Built to save real estate agents time and improve lead management efficiency.
